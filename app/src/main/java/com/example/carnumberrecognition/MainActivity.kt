@@ -4,15 +4,17 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.graphics.Matrix
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.util.SparseIntArray
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import com.gun0912.tedpermission.PermissionListener
@@ -27,21 +29,18 @@ class MainActivity : AppCompatActivity() {
     val REQUEST_IMAGE_CAPTURE = 1
     lateinit var currentPhotoPath : String
 
-    // 사진이 imageview에 회전되서 들어가는거 방지
-    companion object
-    {
-        const val CAMERA_BACK = "0"
-        const val CAMERA_FRONT = "1"
-
-        private val ORIENTATIONS = SparseIntArray()
-
-        init {
-            ORIENTATIONS.append(ExifInterface.ORIENTATION_NORMAL, 0)
-            ORIENTATIONS.append(ExifInterface.ORIENTATION_ROTATE_90, 90)
-            ORIENTATIONS.append(ExifInterface.ORIENTATION_ROTATE_180, 180)
-            ORIENTATIONS.append(ExifInterface.ORIENTATION_ROTATE_270, 270)
-        }
-    }
+//    // 사진 회전값 리턴을 위해 선언
+//    companion object
+//    {
+//        private val ORIENTATIONS = SparseIntArray()
+//
+//        init {
+//            ORIENTATIONS.append(ExifInterface.ORIENTATION_NORMAL, 0)
+//            ORIENTATIONS.append(ExifInterface.ORIENTATION_ROTATE_90, 90)
+//            ORIENTATIONS.append(ExifInterface.ORIENTATION_ROTATE_180, 180)
+//            ORIENTATIONS.append(ExifInterface.ORIENTATION_ROTATE_270, 270)
+//        }
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
     // 권한 체크
     fun settingPermission(){
-        var permis = object  : PermissionListener {
+        val permis = object  : PermissionListener {
             //            어떠한 형식을 상속받는 익명 클래스의 객체를 생성하기 위해 다음과 같이 작성
             override fun onPermissionGranted() {
                 Toast.makeText(this@MainActivity, "권한 허가", Toast.LENGTH_SHORT)
@@ -124,19 +123,60 @@ class MainActivity : AppCompatActivity() {
 
         if(requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK){
             val file = File(currentPhotoPath)
+
+            // ExifInterface란 이미지가 갖고 있는 정보의 집합 클래스
+            val exif = ExifInterface(currentPhotoPath)
+            val exifOrientation: Int
+            val exifDegree: Int
+
             if (Build.VERSION.SDK_INT < 28) {
                 val bitmap = MediaStore.Images.Media
                     .getBitmap(contentResolver, Uri.fromFile(file))
-                img_picture.setImageBitmap(bitmap)
+
+                // ExifInterface.TAG_ORIENTATION = 이미지가 회전한 각도
+                exifOrientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                // 회전 각도 리턴
+                exifDegree = exifOrientationToDegrees(exifOrientation)
+                // imageView set
+                img_picture.setImageBitmap(rotateImage(bitmap, exifDegree))
             }
             else{
                 val decode = ImageDecoder.createSource(this.contentResolver,
                     Uri.fromFile(file))
                 val bitmap = ImageDecoder.decodeBitmap(decode)
-                img_picture.setImageBitmap(bitmap)
+
+                // ExifInterface.TAG_ORIENTATION = 이미지가 회전한 각도
+                exifOrientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                // 회전 각도 리턴
+                exifDegree = exifOrientationToDegrees(exifOrientation)
+                // imageView set
+                img_picture.setImageBitmap(rotateImage(bitmap, exifDegree))
             }
         }
+    }
+
+    // 이미지 회전값 리턴
+    private fun exifOrientationToDegrees(exifOrientation: Int): Int {
+        if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {
+            return 90
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {
+            return 180
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) {
+            return 270
+        }
+        return 0
+    }
+
+    // 리턴받은 회전값을 기준으로 이미지 회전
+    fun rotateImage(source: Bitmap, angle: Int): Bitmap? {
+        val matrix = Matrix()
+        matrix.postRotate(angle.toFloat())
+        return Bitmap.createBitmap(
+            source, 0, 0, source.width, source.height,
+            matrix, true
+        )
     }
 }
 // 참고
 // https://kangmin1012.tistory.com/22
+// https://m.blog.naver.com/PostView.nhn?blogId=whdals0&logNo=221409327416&proxyReferer=https:%2F%2Fwww.google.com%2F
