@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-# import pytesseract
+import pytesseract
 
 # 이미지 load
-img = cv2.imread('number.jpg')
+img = cv2.imread('car.jpg')
 # img = cv2.imread('car1.jpg')
 height, width, channel = img.shape
 print(height, width, channel)
@@ -12,8 +12,8 @@ print(height, width, channel)
 # grayscale 변환
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-# plt.imshow(gray, cmap='gray')
-# plt.show()
+plt.imshow(gray, cmap='gray')
+plt.show()
 
 """Adaptive Thresholding"""
 # 이미지 noise 줄이기
@@ -25,7 +25,7 @@ img_thresh = cv2.adaptiveThreshold(
     adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
     thresholdType=cv2.THRESH_BINARY_INV,
     blockSize=19,
-    C=17
+    C=9
 )
 plt.figure(figsize=(12, 10))
 plt.imshow(img_thresh, cmap='gray')
@@ -38,5 +38,8 @@ img_thresh2 = cv2.GaussianBlur(img_thresh, ksize=(3, 3), sigmaX=0)
 plt.figure(figsize=(12, 10))
 plt.imshow(img_thresh2, cmap='gray')
 plt.show()
+
+char = pytesseract.image_to_string(img_thresh2, lang='kor', config='--psm 7 --oem 0')
+print(char)
 
 # https://076923.github.io/posts/Python-opencv-36/

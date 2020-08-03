@@ -2,7 +2,9 @@ package com.example.carnumberrecognition
 
 import android.app.Activity
 import android.content.Intent
+import android.database.Cursor
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.media.ExifInterface
@@ -12,7 +14,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import android.util.SparseIntArray
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -26,7 +27,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
-    val REQUEST_IMAGE_CAPTURE = 1
+    private val REQUEST_IMAGE_CAPTURE = 1
+    private val GALLERY = 0
     lateinit var currentPhotoPath : String
 
 //    // 사진 회전값 리턴을 위해 선언
@@ -51,7 +53,14 @@ class MainActivity : AppCompatActivity() {
         btn_picture.setOnClickListener {
             startCapture()
         }
+        openGallery.setOnClickListener { openGallery() }
 
+    }
+
+    private fun openGallery(){
+        val intent: Intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.setType("image/*")
+        startActivityForResult(intent, GALLERY)
     }
 
     // 권한 체크
@@ -81,7 +90,7 @@ class MainActivity : AppCompatActivity() {
             .check()
     }
 
-    // 사진 찍고 이미지를 파일로 저장하는 함수수
+    // 사진 찍고 이미지를 파일로 저장하는 함수
    @Throws(IOException::class)
     private fun createImageFile() : File {
         val timeStamp : String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
@@ -121,38 +130,44 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
+        // 사진 촬영시 실행
         if(requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK){
             val file = File(currentPhotoPath)
-
-            // ExifInterface란 이미지가 갖고 있는 정보의 집합 클래스
-            val exif = ExifInterface(currentPhotoPath)
-            val exifOrientation: Int
-            val exifDegree: Int
 
             if (Build.VERSION.SDK_INT < 28) {
                 val bitmap = MediaStore.Images.Media
                     .getBitmap(contentResolver, Uri.fromFile(file))
-
-                // ExifInterface.TAG_ORIENTATION = 이미지가 회전한 각도
-                exifOrientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-                // 회전 각도 리턴
-                exifDegree = exifOrientationToDegrees(exifOrientation)
                 // imageView set
-                img_picture.setImageBitmap(rotateImage(bitmap, exifDegree))
+                img_picture.setImageBitmap(rotateImage(bitmap, rotationData()))
             }
             else{
                 val decode = ImageDecoder.createSource(this.contentResolver,
                     Uri.fromFile(file))
                 val bitmap = ImageDecoder.decodeBitmap(decode)
-
-                // ExifInterface.TAG_ORIENTATION = 이미지가 회전한 각도
-                exifOrientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-                // 회전 각도 리턴
-                exifDegree = exifOrientationToDegrees(exifOrientation)
                 // imageView set
-                img_picture.setImageBitmap(rotateImage(bitmap, exifDegree))
+                img_picture.setImageBitmap(rotateImage(bitmap, rotationData()))
             }
         }
+        // 갤러리에서 불러옴
+       else if (requestCode == GALLERY && resultCode == Activity.RESULT_OK){
+
+            val currentImageUrl: Uri? = data?.data
+            Log.d("bb", currentImageUrl.toString())
+            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, currentImageUrl)
+            Log.d("aa", bitmap.toString())
+
+            img_picture.setImageBitmap(rotateImage(bitmap, 90))
+        }
+    }
+
+    private fun rotationData(): Int {
+        // ExifInterface란 이미지가 갖고 있는 정보의 집합 클래스
+        val exif = ExifInterface(currentPhotoPath)
+        // ExifInterface.TAG_ORIENTATION = 이미지가 회전한 각도
+        val exifOrientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+        // 회전 각도 리턴
+        val exifDegree = exifOrientationToDegrees(exifOrientation)
+        return exifDegree
     }
 
     // 이미지 회전값 리턴
