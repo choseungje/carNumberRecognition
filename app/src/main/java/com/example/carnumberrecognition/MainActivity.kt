@@ -1,12 +1,11 @@
 package com.example.carnumberrecognition
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
-import android.graphics.drawable.BitmapDrawable
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
@@ -18,18 +17,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
-import com.android.volley.Response
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
+import androidx.fragment.app.FragmentActivity
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
 import kotlinx.android.synthetic.main.activity_main.*
 import okhttp3.Call
 import okhttp3.Callback
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -38,44 +33,15 @@ class MainActivity : AppCompatActivity() {
     private val GALLERY = 0
     lateinit var currentPhotoPath : String
     lateinit var currentImagePath: String
+    private var imageTitle: String = ""
 
     private var httpConn: HttpConnection = HttpConnection.getInstance();
 
-
     private val Url: String = "http://203.232.193.176:3000/post"
-
-    object VolleyService {
-
-        val a: String = "aaa"
-
-        fun testVolley(context: Context, Url: String, imagestring: String, success: (Boolean) -> Unit) {
-//            val myJson = JSONObject()
-//            val requestBody = myJson.toString()
-//            /* myJson에 아무 데이터도 put 하지 않았기 때문에 requestBody는 "{}" 이다 */
-            val requestQ = Volley.newRequestQueue(context)
-
-            val testRequest = object : StringRequest(Method.POST, "$Url/img" , Response.Listener { response ->
-                println("서버 Response 수신: $response")
-                success(true)
-            }, Response.ErrorListener { error ->
-                Log.d("ERROR", "서버 Response 가져오기 실패: $error")
-                success(false)
-            }) {
-                override fun getParams(): Map<String, String> {
-                    val params: MutableMap<String,String> = HashMap()
-                    params["img"] = imagestring
-                    return params
-                }
-            }
-            testRequest.setShouldCache(false)
-            requestQ.add(testRequest)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         settingPermission() // 권한체크 시작
 
         btn_picture.setOnClickListener {
@@ -85,151 +51,47 @@ class MainActivity : AppCompatActivity() {
 
         submit.setOnClickListener {
             sendData()
-
-//            VolleyService.testVolley(this, Url, imagestring) { testSuccess ->
-//                if (testSuccess) {
-//                    Toast.makeText(this, "통신 성공!", Toast.LENGTH_LONG).show()
-//                } else {
-//                    Toast.makeText(this, "통신 실패...!", Toast.LENGTH_LONG).show()
-//                }
-//            }
-            // imageview에서 이미지 가져옴
-            val drawable = img_picture.drawable
-            // 형변환
-            val bitmapDrawable = drawable as BitmapDrawable
-            // bitmap 객체로 변환
-            val bitmap = bitmapDrawable.bitmap
-
-            val tempFile: File? = null
-
-//            imagestring = BitMapToString(bitmap)
-//            Log.d("Tq", imagestring)
-
-            // 비트맵을 파일로 변환
-//            FileUploadUtils.goSend(tempFile)
-//            val c: Cursor? = getContentResolver().query(Uri.parse(currentImagePath.toString()), null,null,null,null);
-//            c?.moveToNext();
-//            val absolutePath: String  = c!!.getString(c.getColumnIndex(MediaStore.MediaColumns.DATA));
-            //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
-//            DoFileUpload(Url, imagepath);
-
-
         }
 
     }
+
     /** 웹 서버로 데이터 전송 */
     private fun sendData() {
 // 네트워크 통신하는 작업은 무조건 작업스레드를 생성해서 호출 해줄 것!!
         object : Thread() {
             override fun run() {
 // 파라미터 2개와 미리정의해논 콜백함수를 매개변수로 전달하여 호출
-                httpConn.requestWebServer("데이터1","데이터2", callback);
+                httpConn.requestWebServer("file", imageTitle, callback)
             }
         }.start()
     }
+
     val callback: Callback = object : Callback {
         override fun onFailure(call: Call, e: IOException) {
             Log.d("Tq", "콜백오류:" + e.message)
         }
-
         @Throws(IOException::class)
         override fun onResponse(call: Call, response: okhttp3.Response) {
             val body = response.body!!.string()
             Log.d("wpqkf", "서버에서 응답한 Body:$body")
         }
     }
-//    fun DoFileUpload(apiUrl: String , absolutePath: String ) {
-//        HttpFileUpload(apiUrl, "", absolutePath);
-//    }
-//
-//    val lineEnd: String  = "\r\n";
-//    val twoHyphens: String  = "--";
-//    val boundary: String = "*****";
-//
-//    fun HttpFileUpload(urlString: String , params: String , fileName: String) {
-//
-//        val mFileInputStream = FileInputStream(fileName);
-//        val connectUrl = URL(urlString);
-//        Log.d("Test", "mFileInputStream  is $mFileInputStream");
-//
-//        // HttpURLConnection 통신
-//        val conn = connectUrl.openConnection() as HttpURLConnection
-//        conn.doInput = true
-//        conn.doOutput = true
-//        conn.useCaches = false
-//        conn.requestMethod = "POST"
-//        conn.setRequestProperty("Connection", "Keep-Alive")
-//        conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary)
-//
-//        // write data
-//        val dos = DataOutputStream(conn.outputStream)
-//        dos.writeBytes(twoHyphens + boundary + lineEnd)
-//        dos.writeBytes("Content-Disposition: form-data; name=\"uploadedfile\";filename=\"$fileName\"$lineEnd")
-//        dos.writeBytes(lineEnd);
-//
-//        var bytesAvailable: Int = mFileInputStream.available()
-//        val maxBufferSize: Int = 1024
-//        var bufferSize: Int = bytesAvailable.coerceAtMost(maxBufferSize);
-//
-//        val buffer = ByteArray(bufferSize)
-//        var bytesRead = mFileInputStream.read(buffer, 0, bufferSize);
-//
-//        Log.d("Test", "image byte is $bytesRead");
-//
-//        // read image
-//        while (bytesRead > 0) {
-//            dos.write(buffer, 0, bufferSize);
-//            bytesAvailable = mFileInputStream.available();
-//            bufferSize = Math.min(bytesAvailable, maxBufferSize);
-//            bytesRead = mFileInputStream.read(buffer, 0, bufferSize);
-//        }
-//
-//        dos.writeBytes(lineEnd);
-//        dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-//
-//        // close streams
-//        Log.e("Test", "File is written");
-//        mFileInputStream.close();
-//        dos.flush();
-//        // finish upload...
-//
-//        // get response
-//        val iss: InputStream  = conn.inputStream
-//        Log.d("wpqkf",iss.toString())
-//
-//        val b = StringBuffer();
-//        while (true) {
-//            val line = iss.read()
-//            if (line == null) break
-//            b.append(line)
-//        }
-//        iss.close();
-////            Log.e("Test", b.toString());
-//
-//
-//    } // end of HttpFileUpload()
-
-    //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
-//    fun BitMapToString(bitmap: Bitmap): String {
-//        val baos = ByteArrayOutputStream()
-//        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos)
-//        val b: ByteArray = baos.toByteArray()
-//        return Base64.getEncoder().encodeToString(b)
-//    }
-
-    private fun saveBitmapAsFile(bitmap: Bitmap, filepath: String) {
-        val file = File(filepath)
-        val os: OutputStream?
-        try {
-            file.createNewFile()
-            os = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os)
-            os.close()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    fun getImageNameToUri(uri: Uri) {
+        val cursor = contentResolver.query(
+            uri, null, null, null, null
+        )
+        cursor?.moveToFirst()
+        val column_data: Int? = cursor?.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+        val column_title: Int? =
+            cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.TITLE)
+        var imagPath = cursor?.getString(column_data!!)
+        val imagTitle: String? = cursor?.getString(column_title!!)
+        imageTitle = imagTitle!!
+        imagPath = "file:/$imagPath"
+        Log.d(FragmentActivity.AUDIO_SERVICE, "이미지 경로 : $imagPath")
+        Log.d(FragmentActivity.CAMERA_SERVICE, "이미지 이름 : $imagTitle")
+        cursor.close()
     }
-
     private fun openGallery(){
         val intent: Intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.setType("image/*")
@@ -237,7 +99,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 사진 찍고 이미지를 파일로 저장하는 함수
-//   @Throws(IOException::class)
     private fun createImageFile() : File {
         val timeStamp : String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
         val storageDir : File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
@@ -276,7 +137,7 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?){
         super.onActivityResult(requestCode, resultCode, data)
 
-        var bitmap: Bitmap? = null
+
 
         // 사진 촬영시 실행
         if(requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK){
@@ -284,7 +145,7 @@ class MainActivity : AppCompatActivity() {
             Log.d("ab", currentPhotoPath)
 
             if (Build.VERSION.SDK_INT < 28) {
-                bitmap = MediaStore.Images.Media
+                val bitmap = MediaStore.Images.Media
                     .getBitmap(contentResolver, Uri.fromFile(file))
                 // imageView set
                 img_picture.setImageBitmap(rotateImage(bitmap, rotationData()))
@@ -292,7 +153,7 @@ class MainActivity : AppCompatActivity() {
             else{
                 val decode = ImageDecoder.createSource(this.contentResolver,
                     Uri.fromFile(file))
-                bitmap = ImageDecoder.decodeBitmap(decode)
+                val bitmap = ImageDecoder.decodeBitmap(decode)
                 // imageView set
                 img_picture.setImageBitmap(rotateImage(bitmap, rotationData()))
             }
@@ -301,57 +162,17 @@ class MainActivity : AppCompatActivity() {
        else if (requestCode == GALLERY && resultCode == Activity.RESULT_OK){
 
             val currentImageUrl: Uri? = data?.data
-//            imagepath = currentImageUrl?.let { getImagePathToUri(it) }.toString()
+            currentImageUrl?.let { getImageNameToUri(it) }
 
             Log.d("bb", currentImageUrl.toString())
             currentImagePath = currentImageUrl.toString()
 
-            bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, currentImageUrl)
+            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, currentImageUrl)
             Log.d("aa", bitmap.toString())
 
             img_picture.setImageBitmap(rotateImage(bitmap, 90))
         }
-
-//        val date: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-//        Log.d("zzz", Environment.getExternalStorageState().toString())
-//        if (Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) {
-//            Log.d("g", "zzz")
-//        }
-//        else {
-//            Log.d("tq", "tq")
-//        }
-//
-//        val tempSelectFile = File(Environment.getExternalStorageState(E)+ "/DCIM//Camera/",
-//            "temp_$date.jpeg"
-//        )
-//        val out: OutputStream = FileOutputStream(tempSelectFile)
-//        bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, out)
-
     }
-
-//    fun getImagePathToUri(data: Uri): String? {
-//        //사용자가 선택한 이미지의 정보를 받아옴
-//        val proj: Array<String> = arrayOf(MediaStore.Images.Media.DATA)
-//        val c: Cursor? = contentResolver.query(data, proj, null, null, null)
-//        val index = c?.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-//        c?.moveToFirst()
-//
-//        //이미지의 경로 값
-//        val imgPath: String? = index?.let { c.getString(it) };
-//        Log.d("test", imgPath);
-//
-//        //이미지의 이름 값
-//        val imgName = imgPath?.substring(imgPath.lastIndexOf("/") + 1);
-//        Toast.makeText(this, "이미지 이름 : " + imgName, Toast.LENGTH_SHORT).show();
-//        if (imgName != null) {
-//            imageName = imgName
-//        };
-//
-//        //DoFileUpload("http://192.168.0.37:8080/WebTest/GetImageData.jsp", imgPath);  //해당 함수를 통해 이미지 전송.
-//
-//        return imgPath
-//    }
-
 
     fun rotationData(): Int {
         // ExifInterface란 이미지가 갖고 있는 정보의 집합 클래스
