@@ -2,7 +2,6 @@ package com.example.carnumberrecognition
 
 import android.app.Activity
 import android.content.Intent
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
@@ -34,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var currentPhotoPath : String
     lateinit var currentImagePath: String
     private var imageTitle: String = ""
+    private var imagePath: String = ""
 
     private var httpConn: HttpConnection = HttpConnection.getInstance();
 
@@ -43,6 +43,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         settingPermission() // 권한체크 시작
+        val sdcardStat = Environment.getExternalStorageDirectory().absolutePath
+        Log.d("zzzzzztq", sdcardStat)
 
         btn_picture.setOnClickListener {
             startCapture()
@@ -61,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         object : Thread() {
             override fun run() {
 // 파라미터 2개와 미리정의해논 콜백함수를 매개변수로 전달하여 호출
-                httpConn.requestWebServer("file", imageTitle, callback)
+                httpConn.requestWebServer(imageTitle, imagePath, callback)
             }
         }.start()
     }
@@ -81,13 +83,19 @@ class MainActivity : AppCompatActivity() {
             uri, null, null, null, null
         )
         cursor?.moveToFirst()
-        val column_data: Int? = cursor?.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+        val column_data: Int? = cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
+        Log.d("Tq", column_data.toString())
         val column_title: Int? =
-            cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.TITLE)
+            cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
+        Log.d("Tq", column_title.toString())
+
         var imagPath = cursor?.getString(column_data!!)
         val imagTitle: String? = cursor?.getString(column_title!!)
+
         imageTitle = imagTitle!!
-        imagPath = "file:/$imagPath"
+//        imagePath = "file://storage/emulated/0/DCIM/Camera/$imagPath"
+        imagePath = "/storage/emulated/0/DCIM/Camera/$imagPath"
+
         Log.d(FragmentActivity.AUDIO_SERVICE, "이미지 경로 : $imagPath")
         Log.d(FragmentActivity.CAMERA_SERVICE, "이미지 이름 : $imagTitle")
         cursor.close()
@@ -137,8 +145,6 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?){
         super.onActivityResult(requestCode, resultCode, data)
 
-
-
         // 사진 촬영시 실행
         if(requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK){
             val file = File(currentPhotoPath)
@@ -162,9 +168,10 @@ class MainActivity : AppCompatActivity() {
        else if (requestCode == GALLERY && resultCode == Activity.RESULT_OK){
 
             val currentImageUrl: Uri? = data?.data
+            Log.d("bb", currentImageUrl.toString())
             currentImageUrl?.let { getImageNameToUri(it) }
 
-            Log.d("bb", currentImageUrl.toString())
+
             currentImagePath = currentImageUrl.toString()
 
             val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, currentImageUrl)
