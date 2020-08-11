@@ -13,7 +13,13 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 public class HttpConnection {
+<<<<<<< HEAD
     MediaType mediaType = MediaType.parse("image/jpg");
+=======
+//    File srcFile = new File("/storage/emulated/0/DCIM/Camera/20200731_183149.jpg");
+
+    MediaType mediaType = MediaType.parse("image/jpeg");
+>>>>>>> 03aa7497cb8ea3038499ff944f4b029956645258
 
     private OkHttpClient client;
     private static HttpConnection instance = new HttpConnection();
@@ -43,5 +49,9 @@ public class HttpConnection {
         assert responseBody != null;
         String res = responseBody.toString();
         System.out.print(res);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 03aa7497cb8ea3038499ff944f4b029956645258
     }
 }
