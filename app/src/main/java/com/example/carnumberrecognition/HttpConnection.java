@@ -1,12 +1,7 @@
 package com.example.carnumberrecognition;
 
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Environment;
-import android.provider.MediaStore;
-import android.util.Log;
-
 import java.io.File;
+import java.io.IOException;
 
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -15,10 +10,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class HttpConnection {
-//    File srcFile = new File("/storage/emulated/0/DCIM/Camera/20200809_192247(0).jpg");
-    MediaType mediaType = MediaType.parse("image/jpeg");
+    MediaType mediaType = MediaType.parse("image/jpg");
 
     private OkHttpClient client;
     private static HttpConnection instance = new HttpConnection();
@@ -28,10 +23,10 @@ public class HttpConnection {
 
     private HttpConnection(){ this.client = new OkHttpClient(); }
 
-
     /** 웹 서버로 요청을 한다. */
-    public void requestWebServer(String imageTitle, String srcFile, Callback callback) {
+    public void requestWebServer(String imageTitle, String srcFile, Callback callback) throws IOException {
         File src = new File(srcFile);
+
         // MultipartBody 설정
         RequestBody body = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
@@ -39,9 +34,14 @@ public class HttpConnection {
                 .build();
         // Request 설정
         Request request = new Request.Builder()
-                .url("http://203.232.193.176:3000/post/img")
+                .url("http://203.232.193.176:3000/post")
                 .post(body)
                 .build();
         client.newCall(request).enqueue(callback);
+        Response response = client.newCall(request).execute();
+        ResponseBody responseBody = response.body();
+        assert responseBody != null;
+        String res = responseBody.toString();
+        System.out.print(res);
     }
 }

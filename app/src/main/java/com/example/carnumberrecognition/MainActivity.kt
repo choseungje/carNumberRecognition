@@ -1,6 +1,5 @@
 package com.example.carnumberrecognition
 
-import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
@@ -22,7 +21,9 @@ import com.gun0912.tedpermission.TedPermission
 import kotlinx.android.synthetic.main.activity_main.*
 import okhttp3.Call
 import okhttp3.Callback
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -54,7 +55,6 @@ class MainActivity : AppCompatActivity() {
         submit.setOnClickListener {
             sendData()
         }
-
     }
 
     /** 웹 서버로 데이터 전송 */
@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
 
     val callback: Callback = object : Callback {
         override fun onFailure(call: Call, e: IOException) {
-            Log.d("Tq", "콜백오류:" + e.message)
+            Log.d("dk", "콜백오류:" + e.message)
         }
         @Throws(IOException::class)
         override fun onResponse(call: Call, response: okhttp3.Response) {
@@ -78,28 +78,7 @@ class MainActivity : AppCompatActivity() {
             Log.d("wpqkf", "서버에서 응답한 Body:$body")
         }
     }
-    fun getImageNameToUri(uri: Uri) {
-        val cursor = contentResolver.query(
-            uri, null, null, null, null
-        )
-        cursor?.moveToFirst()
-        val column_data: Int? = cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
-        Log.d("Tq", column_data.toString())
-        val column_title: Int? =
-            cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
-        Log.d("Tq", column_title.toString())
 
-        var imagPath = cursor?.getString(column_data!!)
-        val imagTitle: String? = cursor?.getString(column_title!!)
-
-        imageTitle = imagTitle!!
-//        imagePath = "file://storage/emulated/0/DCIM/Camera/$imagPath"
-        imagePath = "/storage/emulated/0/DCIM/Camera/$imagPath"
-
-        Log.d(FragmentActivity.AUDIO_SERVICE, "이미지 경로 : $imagPath")
-        Log.d(FragmentActivity.CAMERA_SERVICE, "이미지 이름 : $imagTitle")
-        cursor.close()
-    }
     private fun openGallery(){
         val intent: Intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.setType("image/*")
@@ -146,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
 
         // 사진 촬영시 실행
-        if(requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK){
+        if(requestCode == REQUEST_IMAGE_CAPTURE){
             val file = File(currentPhotoPath)
             Log.d("ab", currentPhotoPath)
 
@@ -165,12 +144,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // 갤러리에서 불러옴
-       else if (requestCode == GALLERY && resultCode == Activity.RESULT_OK){
+       else if (requestCode == GALLERY){
 
-            val currentImageUrl: Uri? = data?.data
+            val currentImageUrl: Uri? = data!!.data
             Log.d("bb", currentImageUrl.toString())
             currentImageUrl?.let { getImageNameToUri(it) }
-
 
             currentImagePath = currentImageUrl.toString()
 
@@ -179,6 +157,30 @@ class MainActivity : AppCompatActivity() {
 
             img_picture.setImageBitmap(rotateImage(bitmap, 90))
         }
+    }
+
+    fun getImageNameToUri(uri: Uri) {
+        val cursor = contentResolver.query(
+            uri, null, null, null, null
+        )
+        cursor?.moveToFirst()
+
+        val column_data: Int? = cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
+        Log.d("Tq", column_data.toString())
+        val column_title: Int? =
+            cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
+        Log.d("Tq", column_title.toString())
+
+        val imagPath = cursor?.getString(column_data!!)
+        val imagTitle: String? = cursor?.getString(column_title!!)
+
+        imageTitle = imagTitle!!
+//        imagePath = "file://storage/emulated/0/DCIM/Camera/$imagPath"
+        imagePath = "/storage/emulated/0/DCIM/Camera/$imagPath"
+
+        Log.d(FragmentActivity.AUDIO_SERVICE, "이미지 경로 : $imagePath")
+        Log.d(FragmentActivity.CAMERA_SERVICE, "이미지 이름 : $imagTitle")
+        cursor.close()
     }
 
     fun rotationData(): Int {
@@ -244,3 +246,7 @@ class MainActivity : AppCompatActivity() {
 // https://kangmin1012.tistory.com/22
 // https://m.blog.naver.com/PostView.nhn?blogId=whdals0&logNo=221409327416&proxyReferer=https:%2F%2Fwww.google.com%2F
 // https://blog.yena.io/studynote/2017/12/12/Android-Kotlin-Volley.html
+
+/* 제대로 나온 값
+*
+* */
