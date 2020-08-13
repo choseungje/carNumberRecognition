@@ -1,5 +1,7 @@
 package com.example.carnumberrecognition
 
+import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
@@ -14,6 +16,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
 import com.gun0912.tedpermission.PermissionListener
@@ -35,15 +38,15 @@ class MainActivity : AppCompatActivity() {
     lateinit var currentImagePath: String
     private var imageTitle: String = ""
     private var imagePath: String = ""
+    private var sendFile: File? = null
 
-    private var httpConn: HttpConnection = HttpConnection.getInstance();
-
-    private val Url: String = "http://203.232.193.176:3000/post"
+    private var httpConn: HttpConnection = HttpConnection.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         settingPermission() // 권한체크 시작
+
         val sdcardStat = Environment.getExternalStorageDirectory().absolutePath
         Log.d("zzzzzztq", sdcardStat)
 
@@ -63,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         object : Thread() {
             override fun run() {
 // 파라미터 2개와 미리정의해논 콜백함수를 매개변수로 전달하여 호출
-                httpConn.requestWebServer(imageTitle, imagePath, callback)
+                httpConn.requestWebServer(imageTitle, sendFile, callback)
             }
         }.start()
     }
@@ -80,8 +83,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openGallery(){
-        val intent: Intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.setType("image/*")
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.data = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        intent.type = "image/*"
         startActivityForResult(intent, GALLERY)
     }
 
@@ -95,8 +99,19 @@ class MainActivity : AppCompatActivity() {
             storageDir
         ).apply{
             currentPhotoPath = absolutePath
+            sendFile = File(currentPhotoPath)
+            imageTitle = "JPEG_${timeStamp}_.jpg"
         }
     }
+    private fun saveBitmap(bitmap: Bitmap): String {
+        var folderPath = Environment.getExternalStorageDirectory().absolutePath + "/path/"
+        var fileName = "comment.jpeg"
+        var imagePath = folderPath + fileName
+        var folder = File(folderPath)
+        if (!folder.isDirectory) folder.mkdirs()
+        var out = FileOutputStream(folderPath + fileName)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        return imagePath }
 
     // Intent를 이용해 카메라를 호출하는 함수, 사진 촬영 버튼을 누를 때 실행된다.
     fun startCapture(){
@@ -110,8 +125,7 @@ class MainActivity : AppCompatActivity() {
                 photoFile?.also{
                     val photoURI : Uri = FileProvider.getUriForFile(
                         this,
-                        "com.example.carnumberrecognition.fileprovider",
-                        it
+                        "com.example.carnumberrecognition.fileprovider", it
                     )
                     takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
                     startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
@@ -133,6 +147,7 @@ class MainActivity : AppCompatActivity() {
                 val bitmap = MediaStore.Images.Media
                     .getBitmap(contentResolver, Uri.fromFile(file))
                 // imageView set
+                saveBitmap(bitmap)
                 img_picture.setImageBitmap(rotateImage(bitmap, rotationData()))
             }
             else{
@@ -145,42 +160,55 @@ class MainActivity : AppCompatActivity() {
         }
         // 갤러리에서 불러옴
        else if (requestCode == GALLERY){
+            var currentImageUrl: Uri? = data?.data
 
-            val currentImageUrl: Uri? = data!!.data
-            Log.d("bb", currentImageUrl.toString())
             currentImageUrl?.let { getImageNameToUri(it) }
-
             currentImagePath = currentImageUrl.toString()
 
-            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, currentImageUrl)
+            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, currentImageUrl)
             Log.d("aa", bitmap.toString())
 
             img_picture.setImageBitmap(rotateImage(bitmap, 90))
         }
     }
 
-    fun getImageNameToUri(uri: Uri) {
-        val cursor = contentResolver.query(
-            uri, null, null, null, null
-        )
-        cursor?.moveToFirst()
+    private fun getImageNameToUri(uri: Uri): String? {
+        var path: String? = null
+        var name: String? = null
+        val contentResolver = applicationContext.contentResolver
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            cursor.moveToNext()
+            val pathColumnIdx = cursor.getColumnIndex("_data")
+            val column_title: Int? =
+                cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
+            name = cursor.getString(column_title!!)
 
-        val column_data: Int? = cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
-        Log.d("Tq", column_data.toString())
-        val column_title: Int? =
-            cursor?.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME)
-        Log.d("Tq", column_title.toString())
+            if (pathColumnIdx != -1) {
+                path = cursor.getString(pathColumnIdx)
+            } else {
+                val idColumnIdx = cursor.getColumnIndex("document_id")
+                if (idColumnIdx != -1) {
+                    val documentId = cursor.getString(idColumnIdx)
+                    val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    val selection = "_id = ?"
+                    val selectionArgs = arrayOf(documentId.split(':')[1])
+                    contentResolver.query(contentUri, null, selection, selectionArgs, null)
+                        ?.use { cursor2 ->
+                            cursor2.moveToNext()
+                            val pathColumnIdx2 = cursor2.getColumnIndex("_data")
+                            if (pathColumnIdx2 != -1)
+                                path = cursor2.getString(pathColumnIdx2)
+                        }
+                }
+            }
+        }
+        Log.d("path", path)
+        Log.d("name", name)
 
-        val imagPath = cursor?.getString(column_data!!)
-        val imagTitle: String? = cursor?.getString(column_title!!)
-
-        imageTitle = imagTitle!!
-//        imagePath = "file://storage/emulated/0/DCIM/Camera/$imagPath"
-        imagePath = "/storage/emulated/0/DCIM/Camera/$imagPath"
-
-        Log.d(FragmentActivity.AUDIO_SERVICE, "이미지 경로 : $imagePath")
-        Log.d(FragmentActivity.CAMERA_SERVICE, "이미지 이름 : $imagTitle")
-        cursor.close()
+        imageTitle = name.toString()
+        imagePath = path.toString()
+        sendFile = File(imagePath)
+        return path
     }
 
     fun rotationData(): Int {
@@ -237,7 +265,7 @@ class MainActivity : AppCompatActivity() {
             .setDeniedMessage("카메라 권한 요청 거부")
             .setPermissions(
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-//                android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE,
                 android.Manifest.permission.CAMERA)
             .check()
     }
@@ -246,7 +274,3 @@ class MainActivity : AppCompatActivity() {
 // https://kangmin1012.tistory.com/22
 // https://m.blog.naver.com/PostView.nhn?blogId=whdals0&logNo=221409327416&proxyReferer=https:%2F%2Fwww.google.com%2F
 // https://blog.yena.io/studynote/2017/12/12/Android-Kotlin-Volley.html
-
-/* 제대로 나온 값
-*
-* */
