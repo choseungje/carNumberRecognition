@@ -33,7 +33,7 @@ public class HttpConnection {
                 // MultipartBody 설정
                 RequestBody body = new MultipartBody.Builder()
                         .setType(MultipartBody.FORM)
-                        .addFormDataPart(imageTitle, imageTitle+".jpg", RequestBody.create(sendFile, mediaType))
+                        .addFormDataPart("img", imageTitle+".jpg", RequestBody.create(sendFile, mediaType))
                         .build();
                 // Request 설정
                 Request request = new Request.Builder()

@@ -103,6 +103,8 @@ class MainActivity : AppCompatActivity() {
             imageTitle = "JPEG_${timeStamp}_.jpg"
         }
     }
+
+    // 카메라로 찍었을 때 실행, 핸드폰에 저장
     private fun saveBitmap(bitmap: Bitmap): String {
         var folderPath = Environment.getExternalStorageDirectory().absolutePath + "/path/"
         var fileName = "comment.jpeg"
