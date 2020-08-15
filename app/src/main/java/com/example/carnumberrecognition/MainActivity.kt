@@ -278,3 +278,4 @@ class MainActivity : AppCompatActivity() {
 // https://kangmin1012.tistory.com/22
 // https://m.blog.naver.com/PostView.nhn?blogId=whdals0&logNo=221409327416&proxyReferer=https:%2F%2Fwww.google.com%2F
 // https://blog.yena.io/studynote/2017/12/12/Android-Kotlin-Volley.html
+// https://kobbi-reply.tistory.com/7
