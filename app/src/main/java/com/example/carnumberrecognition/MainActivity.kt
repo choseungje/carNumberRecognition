@@ -113,7 +113,8 @@ class MainActivity : AppCompatActivity() {
         if (!folder.isDirectory) folder.mkdirs()
         var out = FileOutputStream(folderPath + fileName)
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-        return imagePath }
+        return imagePath
+    }
 
     // Intent를 이용해 카메라를 호출하는 함수, 사진 촬영 버튼을 누를 때 실행된다.
     fun startCapture(){
@@ -150,14 +151,15 @@ class MainActivity : AppCompatActivity() {
                     .getBitmap(contentResolver, Uri.fromFile(file))
                 // imageView set
                 saveBitmap(bitmap)
-                img_picture.setImageBitmap(rotateImage(bitmap, rotationData()))
+                Log.d("photo", currentPhotoPath)
+                img_picture.setImageBitmap(rotateImage(bitmap, rotationData(currentPhotoPath)))
             }
             else{
                 val decode = ImageDecoder.createSource(this.contentResolver,
                     Uri.fromFile(file))
                 val bitmap = ImageDecoder.decodeBitmap(decode)
                 // imageView set
-                img_picture.setImageBitmap(rotateImage(bitmap, rotationData()))
+                img_picture.setImageBitmap(rotateImage(bitmap, rotationData(currentPhotoPath)))
             }
         }
         // 갤러리에서 불러옴
@@ -169,8 +171,8 @@ class MainActivity : AppCompatActivity() {
 
             val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, currentImageUrl)
             Log.d("aa", bitmap.toString())
-
-            img_picture.setImageBitmap(rotateImage(bitmap, 90))
+            Log.d("photo", imagePath)
+            img_picture.setImageBitmap(rotateImage(bitmap, rotationData(imagePath)))
         }
     }
 
@@ -213,9 +215,9 @@ class MainActivity : AppCompatActivity() {
         return path
     }
 
-    fun rotationData(): Int {
+    fun rotationData(path: String): Int {
         // ExifInterface란 이미지가 갖고 있는 정보의 집합 클래스
-        val exif = ExifInterface(currentPhotoPath)
+        val exif = ExifInterface(path)
         // ExifInterface.TAG_ORIENTATION = 이미지가 회전한 각도
         val exifOrientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
         // 회전 각도 리턴
