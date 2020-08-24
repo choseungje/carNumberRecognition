@@ -2,9 +2,9 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-
-// const { Post, Hashtag, User} = require('../models');
-// const { isLoggedIn} = require('./middlewares');
+var exec = require('child_process').execFile;
+var cmd = require( "node-cmd" );
+const { kill } = require('process');
 
 const router = express.Router();
 fs.readdir('uploads', (error) => {
@@ -15,7 +15,7 @@ fs.readdir('uploads', (error) => {
 });
 
 const upload = multer({
-    // dest: 'uploads/',
+    dest: 'uploads/',
     storage: multer.diskStorage({
         destination(req, file, cb){
             cb(null, 'uploads/');
@@ -36,6 +36,28 @@ router.post('/', upload.single('img'), (req, res) => {
     console.log(image)
     var img = req.body;
     console.log(img)
+    
+    console.log("fun() start");
+
+    console.log(__filename);
+    console.log(__dirname);
+    exec('z.bat', function(err, data, kill) {  
+        console.log("에러좀 적당히좀 제발좀");
+        console.log(kill);
+        console.log(err);
+        console.log(data.toString());
+    });
+    // cmd.get(
+    //     // 실행할 노드 실행 파일
+    //     "node c.js"
+    //     , function( error, success, stderr ) {
+    //         if( error ) {
+    //                 console.log( "ERROR 발생 :\n\n", error );
+    //         } else {
+    //                 console.log( "SUCCESS :\n\n", success );
+    //         }
+    //     }
+    // );
 
     res.json({url: '/${req.file.filename'});
     console.log(req.file.filename)
