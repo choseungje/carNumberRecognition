@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -23,7 +24,11 @@ public class HttpConnection {
         return instance;
     }
 
-    private HttpConnection(){ this.client = new OkHttpClient(); }
+    private HttpConnection(){ this.client = new OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS) //서버로부터의 응답까지의 시간
+            .readTimeout(30, TimeUnit.SECONDS) //얼마나 빨리 서버에 바이트를 보낼 수 있는지 확인
+            .build(); }
 
     /** 웹 서버로 요청을 한다. */
     public void requestWebServer(String imageTitle, File sendFile, Callback callback) throws IOException {
@@ -41,12 +46,6 @@ public class HttpConnection {
                         .post(body)
                         .build();
                 client.newCall(request).enqueue(callback);
-                Response response = client.newCall(request).execute();
-                ResponseBody responseBody = response.body();
-                assert responseBody != null;
-                String res = responseBody.toString();
-                System.out.print(res);
-                Log.d("TAG", res);
             }
         }
     }

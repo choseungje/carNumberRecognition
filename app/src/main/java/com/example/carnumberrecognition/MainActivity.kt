@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         settingPermission() // 권한체크 시작
 
         val sdcardStat = Environment.getExternalStorageDirectory().absolutePath
-        Log.d("zzzzzztq", sdcardStat)
+        Log.d("xzzz", sdcardStat)
 
         btn_picture.setOnClickListener {
             startCapture()
