@@ -42,7 +42,7 @@ public class HttpConnection {
                         .build();
                 // Request 설정
                 Request request = new Request.Builder()
-                        .url("http://203.232.193.176:3000/post")
+                        .url("http://203.232.193.176:3000/post/post")
                         .post(body)
                         .build();
                 client.newCall(request).enqueue(callback);

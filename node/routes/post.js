@@ -17,17 +17,20 @@ const upload = multer({
     dest: 'uploads/',
     storage: multer.diskStorage({
         destination(req, file, cb){
-            cb(null, 'uploads/');
+            // cb(null, 'uploads/');
+            cb(null, 'routes/darknet/')
         },
         filename(req, file, cb){
+            // const ext = path.extname(file.originalname);
+            // cb(null, path.basename(file.originalname, ext) + Date.now() + ext);
             const ext = path.extname(file.originalname);
-            cb(null, path.basename(file.originalname, ext) + Date.now() + ext);
+            cb(null, path.basename('car' + ext));
         },
     }),
     limits: {fileSize: 5 * 1024 * 1024},
 });
 
-router.post('/', upload.single('img'), (req, res) => {
+router.post('/post', upload.single('img'), (req, res) => {
     console.log("Request Get img upload");
     // var a = req.headers;
     // console.log(a)
@@ -37,9 +40,6 @@ router.post('/', upload.single('img'), (req, res) => {
     console.log(img)
     
     console.log("fun() start");
-
-    console.log(__filename);
-    console.log(__dirname);
 
     //res.send("image delivered.")
     execSync('darknet.bat')
@@ -56,14 +56,18 @@ router.post('/', upload.single('img'), (req, res) => {
     //         }
     //     }
     // );
-
-    res.json({url: '/${req.file.filename'});
+    
+    res.send(req.file.filename);
+    
+    console.log(req.file.path);
+    console.log(__filename);
+    console.log(__dirname);
     console.log(req.file.filename)
 });
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-  res.send('respond');
+  res.send('responds');
 });
 
 module.exports = router;
