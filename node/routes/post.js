@@ -67,7 +67,7 @@ router.post('/post', upload.single('img'), (req, res) => {
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-  res.send('responds');
+  res.send('respond');
 });
 
 module.exports = router;
