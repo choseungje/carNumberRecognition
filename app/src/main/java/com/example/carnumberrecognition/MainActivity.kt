@@ -22,6 +22,7 @@ import androidx.fragment.app.FragmentActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
+import com.example.catnumberrecognition2.R
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
 import kotlinx.android.synthetic.main.activity_main.*
@@ -233,8 +234,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        Log.d("path", path)
-        Log.d("name", name)
+//        Log.d("path", path)
+//        Log.d("name", name)
 
         imageTitle = name.toString()
         imagePath = path.toString()
